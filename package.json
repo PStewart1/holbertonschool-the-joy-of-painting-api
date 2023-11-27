@@ -1,0 +1,40 @@
+{
+  "name": "holbertonschool-the-joy-of-painting-api",
+  "version": "1.0.0",
+  "description": "ETL api w/ node and mysql",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "NODE_ENV=dev nodemon src/index.js",
+    "start:prod": "NODE_ENV=prod node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PStewart1/holbertonschool-the-joy-of-painting-api.git"
+  },
+  "keywords": [
+    "NodeJs",
+    "Express",
+    "MySQL",
+    "API"
+  ],
+  "author": "Paul S",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PStewart1/holbertonschool-the-joy-of-painting-api/issues"
+  },
+  "homepage": "https://github.com/PStewart1/holbertonschool-the-joy-of-painting-api#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "ip": "^1.1.8",
+    "mysql": "^2.18.1",
+    "pino": "^8.16.2",
+    "pino-pretty": "^10.2.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
