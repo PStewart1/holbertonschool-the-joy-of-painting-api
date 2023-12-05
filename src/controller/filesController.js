@@ -2,6 +2,9 @@ import fs from 'fs';
 import { parse } from 'csv-parse';
 import path from 'path';
 import { URL } from 'url';
+import database from '../../db/mysql.config.js';
+import QUERY from '../query/query.js';
+import log from '../util/logger.js';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
@@ -104,7 +107,45 @@ function mergeEpisodes(arr1, arr2, arr3) {
   return merged;
 }
 
+function mergeColors(arr1, arr2) {
+  let merged = [];
+  for (let i = 0; i < arr1.length; i++) {
+    const colors = {
+      // episode: arr3[i],
+      // title: arr1[i].title,
+      // date: arr2[i].date,
+      // url: arr1[i].url,
+      // img_src: arr1[i].img_src,
+      // painting_index: arr1[i].painting_index,
+      // num_colors: arr1[i].num_colors,
+      // color_hexes: arr1[i].color_hex,
+      // notes: arr2[i].notes,
+    };
+    merged.push(colors);
+  }
+  return merged;
+}
+
+function mergeSubjects(arr1, arr2) {
+  let merged = [];
+  for (let i = 0; i < arr1.length; i++) {
+    const subjects = {
+      // episode: arr3[i],
+      // title: arr1[i].title,
+      // date: arr2[i].date,
+      // url: arr1[i].url,
+      // img_src: arr1[i].img_src,
+      // painting_index: arr1[i].painting_index,
+      // num_colors: arr1[i].num_colors,
+      // color_hexes: arr1[i].color_hex,
+      // notes: arr2[i].notes,
+    };
+    merged.push(episode);
+  }
+  return merged;
+}
+
 const episodeList = mergeEpisodes(episodedata, dates, episodes);
-
-
-console.log(merged);
+const colorList = mergeColors(arrayOfColors, episodes);
+const subjectList = mergeSubjects(arrayOfSubjects, episodes);
+console.log(episodeList);
