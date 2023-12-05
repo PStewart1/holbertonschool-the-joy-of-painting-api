@@ -27,6 +27,8 @@
   "homepage": "https://github.com/PStewart1/holbertonschool-the-joy-of-painting-api#readme",
   "dependencies": {
     "cors": "^2.8.5",
+    "csv": "^6.3.5",
+    "csv-parse": "^5.5.2",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "ip": "^1.1.8",
@@ -35,6 +37,7 @@
     "pino-pretty": "^10.2.3"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
     "nodemon": "^3.0.1"
   }
 }
