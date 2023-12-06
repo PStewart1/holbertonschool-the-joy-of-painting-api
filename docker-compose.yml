@@ -36,7 +36,7 @@ services:
       DB_HOST: mysqldb
       DB_PORT: 3306
       DB_USER: admin
-      DB_PWD: 'root'
+      DB_PWD: root
       DB_NAME: bob_ross
       DB_CONNECTION_LIMIT: 20
     depends_on:

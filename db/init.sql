@@ -11,16 +11,17 @@ CREATE TABLE episodes (
   painting_index INT NOT NULL,
   num_colors INT NOT NULL,
   color_hexes VARCHAR(255) NOT NULL,
-  notes VARCHAR(255), NULL,
-  PRIMARY KEY (id)
+  notes VARCHAR(255) NULL,
+  PRIMARY KEY (id),
+  INDEX (episode)
 );
 
 DROP TABLE IF EXISTS colors;
 CREATE TABLE colors (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  episode_id BIGINT UNSIGNED NOT NULL,
-  Alizarin Crimson BOOLEAN NOT NULL,
-  Black Gesso BOOLEAN NOT NULL,
+  episode VARCHAR(6) NOT NULL,
+  Alizarin_Crimson BOOLEAN NOT NULL,
+  Black_Gesso BOOLEAN NOT NULL,
   Bright_Red BOOLEAN NOT NULL,
   Burnt_Umber BOOLEAN NOT NULL,
   Cadmium_Yellow BOOLEAN NOT NULL,
@@ -38,13 +39,13 @@ CREATE TABLE colors (
   Van_Dyke_Brown BOOLEAN NOT NULL,
   Yellow_Ochre BOOLEAN NOT NULL,
   PRIMARY KEY (id),
-  FOREIGN KEY (episode_id) REFERENCES episodes(id)
+  FOREIGN KEY (episode) REFERENCES episodes(episode)
 );
 
 DROP TABLE IF EXISTS subjects;
 CREATE TABLE subjects (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  episode_id BIGINT UNSIGNED NOT NULL,
+  episode VARCHAR(6) NOT NULL,
   APPLE_FRAME BOOLEAN NOT NULL,
   AURORA_BOREALIS BOOLEAN NOT NULL,
   BARN BOOLEAN NOT NULL,
@@ -113,10 +114,10 @@ CREATE TABLE subjects (
   WINTER BOOLEAN NOT NULL,
   WOOD_FRAMED BOOLEAN NOT NULL,
   PRIMARY KEY (id),
-  FOREIGN KEY (episode_id) REFERENCES episodes(id)
+  FOREIGN KEY (episode) REFERENCES episodes(episode)
 )
 
-DELIMITER // 
+/* DELIMITER // 
 CREATE PROCEDURE create_and_return (IN episode VARCHAR(6), IN title VARCHAR(255), IN date VARCHAR(50), IN url VARCHAR(255), IN img_src VARCHAR(255), IN painting_index INT, IN num_colors INT)
 BEGIN
   INSERT INTO episodes(episode, title, date, url, img_src, painting_index, num_colors)
@@ -126,4 +127,4 @@ BEGIN
 
   SELECT * FROM episodes WHERE id=@EPISODE_ID ;
 END//
-DELIMITER ;
+DELIMITER ; */

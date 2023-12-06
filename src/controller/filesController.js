@@ -6,146 +6,174 @@ import database from '../../db/mysql.config.js';
 import QUERY from '../query/query.js';
 import log from '../util/logger.js';
 
-const __dirname = new URL('.', import.meta.url).pathname;
+const dirName = new URL('.', import.meta.url).pathname;
+const csvPath1 = path.join(dirName, 'TheJoyOfPainting-Colors_Used.csv');
+const csvPath2 = path.join(dirName, 'TheJoyOfPainting-Episode_Dates.csv');
+const csvPath3 = path.join(dirName, 'TheJoyOfPainting-Subject_Matter.csv');
 
-const csvPath1 = path.join(__dirname, 'TheJoyOfPainting-Colors_Used.csv');
-let episodedata = [];
-let arrayOfColors = [];
-const  getEpisodeData = await new Promise((resolve, reject) => {
-  fs.createReadStream(csvPath1)
-    .pipe(parse({ delimiter: ',', from_line: 2 }))
-    .on('data', (row) => {
-      episodedata.push({
-        title: row[3],
-        url: row[7],
-        img_src: row[2],
-        painting_index: row[1],
-        num_colors: row[6],
-        color_hex: row[9]
+const episodedata = [];
+const arrayOfColors = [];
+const dates = [];
+const arrayOfSubjects = [];
+const episodes = [];
+
+async function getEpisodeData() { 
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(csvPath1)
+      .pipe(parse({ delimiter: ',', from_line: 2 }))
+      .on('data', (row) => {
+        const painting_index = parseInt(row[1]);
+        const num_colors = parseInt(row[6]);
+        episodedata.push([
+          row[3], // title
+          row[7], // url
+          row[2], // img_src
+          painting_index,
+          num_colors,
+          row[9] // color_hexes
+        ]);
+        let colors = [];
+        for (let i = 10; i < 28; i++) {
+          colors[i - 10] = row[i];
+        }
+        arrayOfColors.push(colors);
+      })
+      .on('end', () => {
+        log.info('CSV file "Colors_Used" processed');
+        resolve(episodedata);
+      })
+      .on('error', (error) => {
+        log.error(error);
+        reject(error);
       });
-      let colors = [];
-      for (let i = 10; i < 28; i++) {
-        colors[i - 10] = row[i];
-      }
-      arrayOfColors.push(colors);
-    })
-    .on('end', () => {
-      // console.log(arrayOfColors);
-      // console.log('finished');
-      resolve(episodedata);
-    })
-    .on('error', (error) => {
-      console.log(error.message);
-      reject(error);
-    });
-});
-
-let dates = [];
-const csvPath2 = path.join(__dirname, 'TheJoyOfPainting-Episode_Dates.csv');
-const getDates = await new Promise((resolve, reject) => {
-  fs.createReadStream(csvPath2)
-    .pipe(parse({ delimiter: [' (', ')'], from_line: 1, relax_column_count: true }))
-    .on('data', (row) => {
-      dates.push({
-        title: row[0],
-        date: row[1],
-        notes: row[2]
-      });
-    })
-    .on('end', () => {
-      // console.log(dates);
-      // console.log('finished');
-      resolve(dates);
-    })
-    .on('error', (error) => {
-      console.log(error.message);
-      reject(error);
-    });
-});
-
-let arrayOfSubjects = [];
-let episodes = [];
-const csvPath3 = path.join(__dirname, 'TheJoyOfPainting-Subject_Matter.csv');
-const getSubjects = await new Promise((resolve, reject) => {
-  fs.createReadStream(csvPath3)
-    .pipe(parse({ delimiter: [','], from_line: 2, relax_column_count: true }))
-    .on('data', (row) => {
-      let subjects = [];
-      for (let i = 2; i < 69; i++) {
-        subjects[i - 2] = row[i];
-      }
-      arrayOfSubjects.push(subjects);
-      episodes.push(row[0]);
-    })
-    .on('end', () => {
-      // console.log(arrayOfSubjects);
-      // console.log('finished');
-      resolve(arrayOfSubjects);
-    })
-    .on('error', (error) => {
-      console.log(error.message);
-      reject(error);
-    });
-});
-
-function mergeEpisodes(arr1, arr2, arr3) {
-  let merged = [];
-  for (let i = 0; i < arr1.length; i++) {
-    const episode = {
-      episode: arr3[i],
-      title: arr1[i].title,
-      date: arr2[i].date,
-      url: arr1[i].url,
-      img_src: arr1[i].img_src,
-      painting_index: arr1[i].painting_index,
-      num_colors: arr1[i].num_colors,
-      color_hexes: arr1[i].color_hex,
-      notes: arr2[i].notes,
-    };
-    merged.push(episode);
-  }
-  return merged;
+  });
 }
 
-function mergeColors(arr1, arr2) {
+async function getDates() {
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(csvPath2)
+      .pipe(parse({ delimiter: [' (', ')'], from_line: 1, relax_column_count: true }))
+      .on('data', (row) => {
+        dates.push([
+          row[0], // title
+          row[1], // date
+          row[2] // notes
+        ]);
+      })
+      .on('end', () => {
+        log.info('CSV file "Episode_Dates" processed');
+        resolve(dates);
+      })
+      .on('error', (error) => {
+        log.error(error);
+        reject(error);
+      });
+  });
+}
+
+async function getSubjects() {
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(csvPath3)
+      .pipe(parse({ delimiter: [','], from_line: 2, relax_column_count: true }))
+      .on('data', (row) => {
+        let subjects = [];
+        for (let i = 2; i < 69; i++) {
+          subjects[i - 2] = row[i];
+        }
+        arrayOfSubjects.push(subjects);
+        episodes.push(row[0]);
+      })
+      .on('end', () => {
+        log.info('CSV file "Subject_Matter" processed');
+        resolve(arrayOfSubjects);
+      })
+      .on('error', (error) => {
+        log.error(error);
+        reject(error);
+      });
+  });
+}
+
+async function mergeEpisodes(arr1, arr2, arr3) {
   let merged = [];
+  let episode = [];
   for (let i = 0; i < arr1.length; i++) {
-    const colors = {
-      // episode: arr3[i],
-      // title: arr1[i].title,
-      // date: arr2[i].date,
-      // url: arr1[i].url,
-      // img_src: arr1[i].img_src,
-      // painting_index: arr1[i].painting_index,
-      // num_colors: arr1[i].num_colors,
-      // color_hexes: arr1[i].color_hex,
-      // notes: arr2[i].notes,
-    };
+      episode = [
+        arr3[i], // episode
+        arr1[i][0], // title
+        arr2[i][1], // date
+        arr1[i][1], // url
+        arr1[i][2], // img_src
+        arr1[i][3], // painting_index
+        arr1[i][4], // num_colors
+        arr1[i][5], // color_hexes
+        arr2[i][2], // notes
+      ];
+    merged.push(episode);
+  }
+
+  await database.query(QUERY.INSERT_EPISODES, [merged], (error, results) => {
+    if (error || !results) {
+      log.error(error.message);
+      return;
+    } else {
+      log.info("Episodes inserted: " + results.affectedRows);
+      return;
+    }
+  });
+};
+
+async function mergeColors(arr1, arr2) {
+  let merged = [];
+  let colors = [];
+  for (let i = 0; i < arr1.length; i++) {
+    colors = [arr2[i],arr1[i][17]]; // episode, Alizarin_Crimson
+    for (let j = 0; j < 17; j++) {
+      colors.push(arr1[i][j]);
+    }
     merged.push(colors);
   }
-  return merged;
-}
+  
+  database.query(QUERY.INSERT_COLORS, [merged], (error, results) => {
+    if (error || !results) {
+      log.error(error.message);
+      return;
+    } else {
+      log.info("Colors inserted: " + results.affectedRows);
+      return;
+    }
+  });
+};
 
-function mergeSubjects(arr1, arr2) {
+async function mergeSubjects(arr1, arr2) {
   let merged = [];
+  let subjects = [];
   for (let i = 0; i < arr1.length; i++) {
-    const subjects = {
-      // episode: arr3[i],
-      // title: arr1[i].title,
-      // date: arr2[i].date,
-      // url: arr1[i].url,
-      // img_src: arr1[i].img_src,
-      // painting_index: arr1[i].painting_index,
-      // num_colors: arr1[i].num_colors,
-      // color_hexes: arr1[i].color_hex,
-      // notes: arr2[i].notes,
-    };
-    merged.push(episode);
+    subjects = [
+      arr2[i] // episode
+    ];
+    for (let j = 0; j < arr1[0].length; j++) {
+      subjects.push(arr1[i][j])
+    }
+    merged.push(subjects);
   }
-  return merged;
-}
+  
+  database.query(QUERY.INSERT_SUBJECTS, [merged], (error, results) => {
+    if (error || !results) {
+      log.error(error.message);
+      return;
+    } else {
+      log.info("Subjects inserted: " + results.affectedRows);
+      return;
+    }
+  });
+};
 
-const episodeList = mergeEpisodes(episodedata, dates, episodes);
-const colorList = mergeColors(arrayOfColors, episodes);
-const subjectList = mergeSubjects(arrayOfSubjects, episodes);
-console.log(episodeList);
+
+await getEpisodeData();
+await getDates();
+await getSubjects();
+
+await mergeEpisodes(episodedata, dates, episodes);
+await mergeSubjects(arrayOfSubjects, episodes);
+await mergeColors(arrayOfColors, episodes);
