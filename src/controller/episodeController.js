@@ -31,23 +31,61 @@ export const getEpisodes = (req, res) => {
   });
 };
 
-export const getEpisode = (req, res) => {
+export const getEpisodesByMonth = (req, res) => {
+  log.info(`${req.method} ${req.originalUrl}, fetching episodes`);
+  const listOfDates = req.params.date.split(',');
+  let episodes = [];
+  listOfDates.forEach((date) => {
+    const dateArray = date.split('-');
+    // log.info(dateArray[0])
+    database.query(QUERY.SELECT_EPISODESBYMONTH, [`${dateArray[0]}%`], (error, results) => {
+      if (error) {
+        log.error(error.message);
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR.code)
+          .send(new Response(HttpStatus.INTERNAL_SERVER_ERROR.code,
+            HttpStatus.INTERNAL_SERVER_ERROR.status, 'Internal Server Error'));
+      }
+      else if (!results) {
+        res.status(HttpStatus.NOT_FOUND.code)
+          .send(new Response(HttpStatus.NOT_FOUND.code,
+            HttpStatus.NOT_FOUND.status, `No episodes in ${req.params.date} found. Did you enter the full month and year? (eg: 'January-1983')`));
+      } else {
+        // log.info(results)
+        results.forEach((episode) => {
+          if (episode.date.includes(dateArray[1]))
+          episodes.push(episode);
+        });
+        log.info(episodes)
+      }
+    });
+  });
+  log.info('episodes after query statemnet: ',episodes)
+  res.status(HttpStatus.OK.code)
+    .send(new Response(HttpStatus.OK.code, HttpStatus.OK.status, 'Episodes retrieved', episodes));
+};
+
+export const getEpisodesBySubject = (req, res) => {
   log.info(`${req.method} ${req.originalUrl}, fetching episode`);
-  database.query(QUERY.SELECT_EPISODE, [req.params.date], (error, results) => {
+  const dateArray = req.params.subject.split(',');
+  database.query(QUERY.SELECT_EPISODESBYMONTH, [`${dateArray[0]}%`], (error, results) => {
     if (error) {
       log.error(error.message);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR.code)
         .send(new Response(HttpStatus.INTERNAL_SERVER_ERROR.code,
-          HttpStatus.INTERNAL_SERVER_ERROR.status,
-          'Internal Server Error'));
+          HttpStatus.INTERNAL_SERVER_ERROR.status, 'Internal Server Error'));
     }
-    else if (!results[0]) {
+    else if (!results) {
       res.status(HttpStatus.NOT_FOUND.code)
         .send(new Response(HttpStatus.NOT_FOUND.code,
-          HttpStatus.NOT_FOUND.status, `Episode on ${req.params.date} not found`));
+          HttpStatus.NOT_FOUND.status, `No episodes in ${req.params.subject} found. Did you enter the full month and year? (eg: 'January-1983')`));
     } else {
+      let episodes = [];
+      results.forEach((episode) => {
+        if (episode.date.includes(dateArray[1]))
+        episodes.push(episode);
+      });
       res.status(HttpStatus.OK.code)
-        .send(new Response(HttpStatus.OK.code, HttpStatus.OK.status, 'Episode retrieved', results[0]));
+        .send(new Response(HttpStatus.OK.code, HttpStatus.OK.status, 'Episodes retrieved', episodes));
     }
   });
 };

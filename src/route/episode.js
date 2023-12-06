@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-  getEpisodes, getEpisode, postEpisode, putEpisode, deleteEpisode
+  getEpisodes, getEpisodesByMonth, postEpisode, putEpisode, deleteEpisode, getEpisodesBySubject
 } from '../controller/episodeController.js';
 
 const router = express.Router();
@@ -9,12 +9,15 @@ router.route('/')
   .get(getEpisodes)
   .post(postEpisode);
 
-router.route('/:id')
-  // .get(getEpisode)
-  .put(putEpisode)
-  .delete(deleteEpisode);
+// router.route('/:id')
+//   // .get(getEpisode)
+//   .put(putEpisode)
+//   .delete(deleteEpisode);
 
 router.route('/:date')
-  .get(getEpisode);
+  .get(getEpisodesByMonth);
+
+router.route('/:subject')
+  .get(getEpisodesBySubject);
 
 export default router;
