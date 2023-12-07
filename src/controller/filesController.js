@@ -115,11 +115,8 @@ async function mergeEpisodes(arr1, arr2, arr3) {
       log.error(error.message);
       return;
     }) 
-
   log.info("Episodes inserted: " + results.length);
   return;
-
-  
 };
 
 const colorsList = ['Black_Gesso','Bright_Red','Burnt_Umber','Cadmium_Yellow','Dark_Sienna','Indian_Red',

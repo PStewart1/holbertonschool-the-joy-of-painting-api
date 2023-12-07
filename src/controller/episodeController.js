@@ -30,7 +30,6 @@ export const getEpisodes = async (req, res) => {
   }
 };
 
-
 export async function getEpisodesSearch(req, res) {
   log.info(`${req.method} ${req.originalUrl}, fetching episodes`);
   let request = [];
@@ -101,7 +100,6 @@ export async function getEpisodesSearch(req, res) {
       });
     }
     colors = data.map((episode) => episode.dataValues);
-
   }
 
   // filtering by subjects

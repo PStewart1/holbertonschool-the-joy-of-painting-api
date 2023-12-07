@@ -28,11 +28,11 @@ Instructions:
    * `Container nodeappcontainer  Started`
 in the terminal, so the containers can fully spin up and connect.
    
-Then you're good to go. You can use Postman or your api tester of choice, on port 3000. You can get all episodes with a blank GET at `/`, and send your queries at `/search/`. You can send you requests in the url, query paramaters or body. 
+Then you're good to go. You can use Postman or your api tester of choice, on port 3000. You can get all episodes with a blank GET at `/episodes//`, and send your queries at `episodes//search/`. You can send you requests in the url, query paramaters or body. 
 * Date should be in this format `January 1983`, with the key `date`.
 * Colors can be sent as a cs list, like this `Alizarin_Crimson,Black_Gesso` with the key `colors`.
   * If you send more than one, you must include an extra key `colors_andor`, and set it to `or` or `and` to indicate whether you want episodes containing any of the colors, or all of them.
 * Subjects can be sent as a cs list, like this `APPLE_FRAME,AURORA_BOREALIS` with the key `subjects`.
   * If you send more than one, you must include an extra key `subjects_andor`, and set it to `or` or `and` to indicate whether you want episodes containing any of the subjects, or all of them.
 * If you include both colors and subjects, you must include an extra key `colors_andor_subjects`, and set it to `or` or `and` to indicate whether you want episodes containing either the subjects or colors, or both of them.
-* If you GET using url paramaters, they must be in this order `search/date/colors/colors_andor/subjects/subjects_andor/colors_andor_subjects`
+* If you GET using url paramaters, they must be in this order `episodes/search/date/colors/colors_andor/subjects/subjects_andor/colors_andor_subjects`
