@@ -12,8 +12,7 @@ CREATE TABLE episodes (
   num_colors INT NOT NULL,
   color_hexes VARCHAR(255) NOT NULL,
   notes VARCHAR(255) NULL,
-  PRIMARY KEY (id),
-  INDEX (episode)
+  PRIMARY KEY (id)
 );
 
 DROP TABLE IF EXISTS colors;
@@ -38,8 +37,7 @@ CREATE TABLE colors (
   Titanium_White BOOLEAN NOT NULL,
   Van_Dyke_Brown BOOLEAN NOT NULL,
   Yellow_Ochre BOOLEAN NOT NULL,
-  PRIMARY KEY (id),
-  FOREIGN KEY (episode) REFERENCES episodes(episode)
+  PRIMARY KEY (id)
 );
 
 DROP TABLE IF EXISTS subjects;
@@ -113,18 +111,5 @@ CREATE TABLE subjects (
   WINDOW_FRAME BOOLEAN NOT NULL,
   WINTER BOOLEAN NOT NULL,
   WOOD_FRAMED BOOLEAN NOT NULL,
-  PRIMARY KEY (id),
-  FOREIGN KEY (episode) REFERENCES episodes(episode)
-)
-
-/* DELIMITER // 
-CREATE PROCEDURE create_and_return (IN episode VARCHAR(6), IN title VARCHAR(255), IN date VARCHAR(50), IN url VARCHAR(255), IN img_src VARCHAR(255), IN painting_index INT, IN num_colors INT)
-BEGIN
-  INSERT INTO episodes(episode, title, date, url, img_src, painting_index, num_colors)
-  VALUES (episode, title, date, url, img_src, painting_index, num_colors);
-
-  SET @EPISODE_ID = LAST_INSERT_ID();
-
-  SELECT * FROM episodes WHERE id=@EPISODE_ID ;
-END//
-DELIMITER ; */
+  PRIMARY KEY (id)
+);

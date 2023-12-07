@@ -1,23 +1,15 @@
 import express from 'express';
-import {
-  getEpisodes, getEpisodesByMonth, postEpisode, putEpisode, deleteEpisode, getEpisodesBySubject
-} from '../controller/episodeController.js';
+import { getEpisodes, getEpisodesSearch } from '../controller/episodeController.js';
 
 const router = express.Router();
 
 router.route('/')
   .get(getEpisodes)
-  .post(postEpisode);
 
-// router.route('/:id')
-//   // .get(getEpisode)
-//   .put(putEpisode)
-//   .delete(deleteEpisode);
+router.route('/search/')
+  .get(getEpisodesSearch);
 
-router.route('/:date')
-  .get(getEpisodesByMonth);
-
-router.route('/:subject')
-  .get(getEpisodesBySubject);
+router.route('/search/:date?/:colors?/:colors_andor?/:subjects?/:subjects_andor?/:colors_andor_subjects?')
+  .get(getEpisodesSearch);
 
 export default router;

@@ -7,6 +7,7 @@ import log from './util/logger.js';
 import HttpStatus from './controller/episodeController.js';
 import router from './route/episode.js';
 
+// start server
 dotenv.config();
 const PORT = process.env.SERVER_PORT || 3000;
 const app = express();

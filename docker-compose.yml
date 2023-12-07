@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     container_name: mysqlcontainer
     command: --default-authentication-plugin=mysql_native_password
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./db/init.sql:/docker-entrypoint-initdb.d/0_init.sql
       - $HOME/database:/var/lib/mysql
@@ -20,6 +20,10 @@ services:
       SERVICE_NAME: mysqldb
     networks:
       - internalnet
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 12
 
   nodeapp:
     container_name: nodeappcontainer
@@ -40,7 +44,9 @@ services:
       DB_NAME: bob_ross
       DB_CONNECTION_LIMIT: 20
     depends_on:
-      - mysqldb
+      mysqldb:
+        condition: service_healthy
+    restart: always
     networks:
       - internalnet
 

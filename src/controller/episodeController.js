@@ -1,7 +1,7 @@
-import database from '../../db/mysql.config.js';
 import log from '../util/logger.js';
 import Response from '../../domain/response.js';
-import QUERY from '../query/query.js';
+import db from '../../db/model/db.js';
+import {Op} from 'sequelize';
 
 const HttpStatus = {
   OK: { code: 200, status: 'OK' },
@@ -12,154 +12,186 @@ const HttpStatus = {
   INTERNAL_SERVER_ERROR: { code: 500, status: 'INTERNAL_SERVER_ERROR' },
 };
 
-export const getEpisodes = (req, res) => {
+const Episodes = db.episodes;
+const Colors = db.colors;
+const Subjects = db.subjects;
+
+export const getEpisodes = async (req, res) => {
   log.info(`${req.method} ${req.originalUrl}, fetching episodes`);
-  database.query(QUERY.SELECT_EPISODES, (error, results) => {
-    if (error) {
-      log.error(error.message);
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR.code)
-        .send(new Response(HttpStatus.INTERNAL_SERVER_ERROR.code,
-          HttpStatus.INTERNAL_SERVER_ERROR.status, 'Internal Server Error'));
-    } else if (!results) {
-      res.status(HttpStatus.OK.code)
-        .send(new Response(HttpStatus.OK.code, HttpStatus.OK.status, 'No episodes found'));
-    } else {
-      res.status(HttpStatus.OK.code)
-        .send(new Response(HttpStatus.OK.code,
-          HttpStatus.OK.status, 'Episodes retrieved', { episodes: results }));
-    }
-  });
+  let results = await Episodes.findAll({})
+  if (!results) {
+    log.info(results)
+    res.status(HttpStatus.OK.code)
+      .send(new Response(HttpStatus.OK.code, HttpStatus.OK.status, 'No episodes found'));
+  } else {
+    res.status(HttpStatus.OK.code)
+      .send(new Response(HttpStatus.OK.code,
+        HttpStatus.OK.status, 'Episodes retrieved', { episodes: results }));
+  }
 };
 
-export const getEpisodesByMonth = (req, res) => {
+
+export async function getEpisodesSearch(req, res) {
   log.info(`${req.method} ${req.originalUrl}, fetching episodes`);
-  const listOfDates = req.params.date.split(',');
+  let request = [];
+  if (Object.entries(req.query).length > 0) {
+    request = req.query;
+  } else if (Object.entries(req.body).length > 0) {
+    request = req.body;
+  } else if (Object.entries(req.params).length > 0) {
+    request = req.params;
+  }
+  else {
+    res.status(HttpStatus.BAD_REQUEST.code)
+      .send(new Response(HttpStatus.BAD_REQUEST.code,
+        HttpStatus.BAD_REQUEST.status, 'No query found'));
+    return;
+  }
   let episodes = [];
-  listOfDates.forEach((date) => {
-    const dateArray = date.split('-');
-    // log.info(dateArray[0])
-    database.query(QUERY.SELECT_EPISODESBYMONTH, [`${dateArray[0]}%`], (error, results) => {
-      if (error) {
-        log.error(error.message);
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR.code)
-          .send(new Response(HttpStatus.INTERNAL_SERVER_ERROR.code,
-            HttpStatus.INTERNAL_SERVER_ERROR.status, 'Internal Server Error'));
-      }
-      else if (!results) {
-        res.status(HttpStatus.NOT_FOUND.code)
-          .send(new Response(HttpStatus.NOT_FOUND.code,
-            HttpStatus.NOT_FOUND.status, `No episodes in ${req.params.date} found. Did you enter the full month and year? (eg: 'January-1983')`));
-      } else {
-        // log.info(results)
-        results.forEach((episode) => {
-          if (episode.date.includes(dateArray[1]))
-          episodes.push(episode);
-        });
-        log.info(episodes)
-      }
+  let dates = [];
+  let colors = [];
+  let subjects = [];
+  let colors_andor_subjects = request.colors_andor_subjects;
+  // log.info(`query contains: ${Object.entries(req.query)}`)
+  // log.info(`body contains: ${Object.entries(req.body)}`)
+  // log.info(`params contians: ${Object.entries(req.params)}`)
+
+  // filtering by dates
+
+  if (request.date) {
+    const query = request.date.split(' ');
+    const data = await Episodes.findAll({
+      attributes: ['episode'],
+      where: {
+        [Op.and]: [
+          {date: { [Op.like]: `${query[0]}%` }},
+          {date: { [Op.like]: `%${query[1]}` }}
+      ]}
     });
-  });
-  log.info('episodes after query statemnet: ',episodes)
-  res.status(HttpStatus.OK.code)
-    .send(new Response(HttpStatus.OK.code, HttpStatus.OK.status, 'Episodes retrieved', episodes));
-};
+    dates = data.map((episode) => episode.dataValues);
+  }
 
-export const getEpisodesBySubject = (req, res) => {
-  log.info(`${req.method} ${req.originalUrl}, fetching episode`);
-  const dateArray = req.params.subject.split(',');
-  database.query(QUERY.SELECT_EPISODESBYMONTH, [`${dateArray[0]}%`], (error, results) => {
-    if (error) {
-      log.error(error.message);
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR.code)
-        .send(new Response(HttpStatus.INTERNAL_SERVER_ERROR.code,
-          HttpStatus.INTERNAL_SERVER_ERROR.status, 'Internal Server Error'));
-    }
-    else if (!results) {
-      res.status(HttpStatus.NOT_FOUND.code)
-        .send(new Response(HttpStatus.NOT_FOUND.code,
-          HttpStatus.NOT_FOUND.status, `No episodes in ${req.params.subject} found. Did you enter the full month and year? (eg: 'January-1983')`));
-    } else {
-      let episodes = [];
-      results.forEach((episode) => {
-        if (episode.date.includes(dateArray[1]))
-        episodes.push(episode);
+  // filtering by colors
+
+  if (request.colors) {
+    const colorsArray = request.colors.split(',');
+    let andor = request.colors_andor;
+    if (colorsArray.length > 1) {
+      if(!andor || andor !== 'and' && andor !== 'or') {
+        res.status(HttpStatus.BAD_REQUEST.code)
+          .send(new Response(HttpStatus.BAD_REQUEST.code,
+            HttpStatus.BAD_REQUEST.status, 'Please specify whether you would like episodes with all or any of the colors specified, by setting the andor query parameter to "and" or "or"'));
+        return;
+      }};
+    const query = colorsArray.map(key => ({ [key]: 1 }));
+    let data ={}
+    if (andor === 'or') {
+      data = await Colors.findAll({
+        attributes: ['episode'],
+        where: {
+          [Op.or]: query
+        }
       });
-      res.status(HttpStatus.OK.code)
-        .send(new Response(HttpStatus.OK.code, HttpStatus.OK.status, 'Episodes retrieved', episodes));
-    }
-  });
-};
-
-export const postEpisode = (req, res) => {
-  log.info(`${req.method} ${req.originalUrl}, creating episode`);
-  database.query(QUERY.CREATE_EPISODE_PROCEDURE, Object.values(req.body), (error, results) => {
-    if (error || !results) {
-      log.error(error.message);
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR.code)
-        .send(new Response(HttpStatus.INTERNAL_SERVER_ERROR.code,
-          HttpStatus.INTERNAL_SERVER_ERROR.status, 'Error creating episode'));
     } else {
-      // const episode = { id: results.insertId, ...req.body };
-      const episode = results[0][0];
-      res.status(HttpStatus.CREATED.code)
-        .send(new Response(HttpStatus.CREATED.code,
-          HttpStatus.CREATED.status, 'Episode created', { episode }));
+      data = await Colors.findAll({
+        attributes: ['episode'],
+        where: {
+          [Op.and]: query
+        }
+      });
     }
-  });
-};
+    colors = data.map((episode) => episode.dataValues);
 
-export const putEpisode = (req, res) => {
-  log.info(`${req.method} ${req.originalUrl}, fetching episode`);
-  database.query(QUERY.SELECT_EPISODE, [req.params.id], (err, result) => {
-    if (err || !result) {
-      log.error(err.message);
-      res.status(HttpStatus.NOT_FOUND.code)
-        .send(new Response(HttpStatus.NOT_FOUND.code,
-          HttpStatus.NOT_FOUND.status,
-          `Episode with id ${req.params.id} not found`));
-    } else {
-      log.info(`${req.method} ${req.originalUrl}, updating episode`);
-      database.query(QUERY.UPDATE_EPISODE,
-        [...Object.values(req.body), req.params.id], (error, results) => {
-          if (error || !results) {
-            log.error(error.message);
-            res.status(HttpStatus.INTERNAL_SERVER_ERROR.code)
-              .send(new Response(HttpStatus.INTERNAL_SERVER_ERROR.code,
-                HttpStatus.INTERNAL_SERVER_ERROR.status,
-                'Error updating episode'));
-          } else {
-            res.status(HttpStatus.OK.code)
-              .send(new Response(HttpStatus.OK.code,
-                HttpStatus.OK.status,
-                'Episode updated', { id: req.params.id, ...req.body }));
-          }
-        });
-    }
-  });
-};
+  }
 
-export const deleteEpisode = (req, res) => {
-  log.info(`${req.method} ${req.originalUrl}, deleting episode`);
-  database.query(QUERY.DELETE_EPISODE, [req.params.id], (error, results) => {
-    if (results.affectedRows > 0) {
-      res.status(HttpStatus.OK.code)
-        .send(new Response(HttpStatus.OK.code, HttpStatus.OK.status, 'Episode deleted'));
+  // filtering by subjects
+
+  if (request.subjects) {
+    const subjectsArray = request.subjects.split(',');
+    let andor = request.subjects_andor;
+    if (subjectsArray.length > 1) {
+      if(!andor || andor !== 'and' && andor !== 'or') {
+        res.status(HttpStatus.BAD_REQUEST.code)
+          .send(new Response(HttpStatus.BAD_REQUEST.code,
+            HttpStatus.BAD_REQUEST.status, "Please specify whether you would like episodes with all or any of the subjects specified, by setting the andor query parameter to 'and' or 'or'"));
+        return;
+      }};
+    const query = subjectsArray.map(key => ({ [key]: 1 }));
+    let data ={}
+    if (andor === 'or') {
+      data = await Subjects.findAll({
+        attributes: ['episode'],
+        where: {
+          [Op.or]: query
+        }
+      });
     } else {
-      // log.info(`${req.method} ${req.originalUrl}, deleting episode`);
-      // database.query(QUERY.DELETE_EPISODE, [req.params.id], (error, results) => {
-      //   if (error || !results) {
-      //     log.error(error.message);
-      res.status(HttpStatus.NOT_FOUND.code)
-        .send(new Response(HttpStatus.NOT_FOUND.code,
-          HttpStatus.NOT_FOUND.status,
-          `Episode with id ${req.params.id} not found`));
-      // } else {
-      //   res.status(HttpStatus.NO_CONTENT.code)
-      // .send(new Response(HttpStatus.NO_CONTENT.code,
-      //   HttpStatus.NO_CONTENT.status,
-      //   `Episode with id ${req.params.id} deleted`));
+      data = await Subjects.findAll({
+        attributes: ['episode'],
+        where: {
+          [Op.and]: query
+        }
+      });
+    }
+    subjects = data.map((episode) => episode.dataValues);
+  }
+
+  // finally get all episodes that match the query(s)
+
+  if (dates.length === 0 && colors.length === 0 && subjects.length === 0) {
+    res.status(HttpStatus.BAD_REQUEST.code)
+      .send(new Response(HttpStatus.BAD_REQUEST.code,
+        HttpStatus.BAD_REQUEST.status, 'No query found'));
+    return;
+  }
+  let mergedQueryList = [];
+  if (dates.length > 0 && colors.length > 0 && subjects.length > 0) {
+    if (colors_andor_subjects === 'and') {
+      const mergedArray = colors.filter(a => subjects.some(b => a.episode === b.episode));
+      mergedQueryList = dates.filter(a => mergedArray.some(b => a.episode === b.episode));
+    } else {
+      const mergedArray = [...colors, ...subjects];
+      mergedQueryList = dates.filter(a => mergedArray.some(b => a.episode === b.episode));
+    }
+  }
+  if (dates.length > 0 && colors.length > 0 && subjects.length === 0) {
+    mergedQueryList = dates.filter(a => colors.some(b => a.episode === b.episode));
+  }
+  if (dates.length > 0 && colors.length === 0 && subjects.length > 0) {
+    mergedQueryList = dates.filter(a => subjects.some(b => a.episode === b.episode));
+  }
+  if (dates.length === 0 && colors.length > 0 && subjects.length > 0) {
+    if (colors_andor_subjects === 'and') {
+      mergedQueryList = colors.filter(a => subjects.some(b => a.episode === b.episode));
+    } else {
+      mergedQueryList = [...colors, ...subjects];
+    }
+  }
+  if (dates.length > 0 && colors.length === 0 && subjects.length === 0) {
+    mergedQueryList = dates;
+  }
+  if (dates.length === 0 && colors.length > 0 && subjects.length === 0) {
+    mergedQueryList = colors;
+  }
+  if (dates.length === 0 && colors.length === 0 && subjects.length > 0) {
+    mergedQueryList = subjects;
+  }
+  log.info(mergedQueryList)
+  const data = await Episodes.findAll({
+    where: {
+      [Op.or]: mergedQueryList
     }
   });
+  episodes = data.map((episode) => episode.dataValues);
+  if (episodes.length === 0) {
+    res.status(HttpStatus.NOT_FOUND.code)
+      .send(new Response(HttpStatus.NOT_FOUND.code,
+        HttpStatus.NOT_FOUND.status, `No episodes with those selections found`));
+  } else {
+    res.status(HttpStatus.OK.code)
+      .send(new Response(HttpStatus.OK.code,
+        HttpStatus.OK.status, 'Episodes retrieved', { episodes: episodes }));
+  }
 };
 
 export default HttpStatus;
