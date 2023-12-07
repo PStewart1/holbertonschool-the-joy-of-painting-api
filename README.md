@@ -15,6 +15,8 @@ Your local public broadcasting station has an overwhelming amount of requests fo
 
 Your local broadcasting station has already done some leg work to gather data, however it is spread out across multiple different files and formats, which makes the data unusable in its current form. They’ve also already hired another team to build a front-end to allow their viewers to filter episodes of The Joy of Painting and now they’ve hired you to help them with the process of designing and building a database that will house this collected data in a way that is usable and also build an API to access it.
 
+---
+
 Database diagram can be found in `db/dbDesign.md`
 
 Instructions:
@@ -24,7 +26,7 @@ Instructions:
 4. Wait about 20 seconds till you see: 
    * `Container mysqlcontainer    Healthy`
    * `Container nodeappcontainer  Started`
-  in the terminal, so the containers can fully spin up and connect.
+in the terminal, so the containers can fully spin up and connect.
    
 Then you're good to go. You can use Postman or your api tester of choice, on port 3000. You can get all episodes with a blank GET at `/`, and send your queries at `/search/`. You can send you requests in the url, query paramaters or body. 
 * Date should be in this format `January 1983`, with the key `date`.
