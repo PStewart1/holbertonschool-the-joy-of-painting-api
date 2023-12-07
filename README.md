@@ -17,9 +17,12 @@ Your local broadcasting station has already done some leg work to gather data, h
 
 Instructions:
 1. Clone Repo
-2. Run 'docker-compose up -d --build' to start docker images of the app and db
-3. wait 30 seconds for containers to fully spin up and connect
-4. run node src/controller/filesController.js to load db with data from csv files
+2. Install Docker and dockre compose if you dont have it already
+3. Run 'docker-compose up -d --build' to start docker images of the app and db
+4. wait about 20 seconds till you see 
+   * 'Container mysqlcontainer    Healthy'
+   * 'Container nodeappcontainer  Started'
+  in the terminal, so the containers can fully spin up and connect.
    
 Then you're good to go. You can use postman or your api tester of choice, on port 3000. you can send you requests in the url, query paramaters or body. 
   Date should be in this format 'January 1983', with the key 'date'

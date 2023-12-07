@@ -2,20 +2,8 @@ import fs from 'fs';
 import { parse } from 'csv-parse';
 import path from 'path';
 import { URL } from 'url';
-import mysql from 'mysql';
-import QUERY from '../query/query.js';
 import log from '../util/logger.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
-const database = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PWD,
-  database: process.env.DB_NAME,
-  connectionLimit: process.env.DB_CONNECTION_LIMIT
-});
+import db from '../../db/model/db.js';
 
 const dirName = new URL('.', import.meta.url).pathname;
 const csvPath1 = path.join(dirName, 'TheJoyOfPainting-Colors_Used.csv');
@@ -107,84 +95,97 @@ async function getSubjects() {
 
 async function mergeEpisodes(arr1, arr2, arr3) {
   let merged = [];
-  let episode = [];
   for (let i = 0; i < arr1.length; i++) {
-      episode = [
-        arr3[i], // episode
-        arr1[i][0], // title
-        arr2[i][1], // date
-        arr1[i][1], // url
-        arr1[i][2], // img_src
-        arr1[i][3], // painting_index
-        arr1[i][4], // num_colors
-        arr1[i][5], // color_hexes
-        arr2[i][2], // notes
-      ];
+      const episode = {
+        episode: arr3[i], // episode
+        title: arr1[i][0], // title
+        date: arr2[i][1], // date
+        url: arr1[i][1], // url
+        img_src: arr1[i][2], // img_src
+        painting_index: arr1[i][3], // painting_index
+        num_colors: arr1[i][4], // num_colors
+        color_hexes: arr1[i][5], // color_hexes
+        notes: arr2[i][2], // notes
+      };
     merged.push(episode);
   }
 
-  await database.query(QUERY.INSERT_EPISODES, [merged], (error, results) => {
-    if (error || !results) {
+  const results = await db.episodes.bulkCreate(merged)
+    .catch((error) => {
       log.error(error.message);
       return;
-    } else {
-      log.info("Episodes inserted: " + results.affectedRows);
-      return;
-    }
-  });
+    }) 
+
+  log.info("Episodes inserted: " + results.length);
+  return;
+
+  
 };
+
+const colorsList = ['Black_Gesso','Bright_Red','Burnt_Umber','Cadmium_Yellow','Dark_Sienna','Indian_Red',
+  'Indian_Yellow','Liquid_Black','Liquid_Clear','Midnight_Black','Phthalo_Blue','Phthalo_Green','Prussian_Blue','Sap_Green',
+  'Titanium_White','Van_Dyke_Brown','Yellow_Ochre']
 
 async function mergeColors(arr1, arr2) {
   let merged = [];
-  let colors = [];
   for (let i = 0; i < arr1.length; i++) {
-    colors = [arr2[i],arr1[i][17]]; // episode, Alizarin_Crimson
+    let colors = {episode: arr2[i], Alizarin_Crimson: arr1[i][17]}; // episode, Alizarin_Crimson
     for (let j = 0; j < 17; j++) {
-      colors.push(arr1[i][j]);
+      colors[colorsList[j]] = arr1[i][j];
     }
     merged.push(colors);
   }
   
-  database.query(QUERY.INSERT_COLORS, [merged], (error, results) => {
-    if (error || !results) {
+  const results = await db.colors.bulkCreate(merged)
+    .catch((error) => {
       log.error(error.message);
       return;
-    } else {
-      log.info("Colors inserted: " + results.affectedRows);
-      return;
-    }
-  });
+    }) 
+
+  log.info("Colors inserted: " + results.length);
+  return;
+
 };
+
+const subjectsList = ['APPLE_FRAME','AURORA_BOREALIS','BARN','BEACH','BOAT','BRIDGE','BUILDING','BUSHES','CABIN','CACTUS',
+  'CIRCLE_FRAME','CIRRUS','CLIFF','CLOUDS','CONIFER','CUMULUS','DECIDUOUS','DIANE_ANDRE','DOCK','DOUBLE_OVAL_FRAME','FARM',
+  'FENCE','FIRE','FLORIDA_FRAME','FLOWERS','FOG','FRAMED','GRASS','GUEST','HALF_CIRCLE_FRAME','HALF_OVAL_FRAME','HILLS','LAKE',
+  'LAKES','LIGHTHOUSE','MILL','MOON','MOUNTAIN','MOUNTAINS','NIGHT','OCEAN','OVAL_FRAME','PALM_TREES','PATH','PERSON','PORTRAIT',
+  'RECTANGLE_3D_FRAME','RECTANGULAR_FRAME','RIVER','ROCKS','SEASHELL_FRAME','SNOW','SNOWY_MOUNTAIN','SPLIT_FRAME','STEVE_ROSS',
+  'STRUCTURE','SUN','TOMB_FRAME','TREE','TREES','TRIPLE_FRAME','WATERFALL','WAVES','WINDMILL','WINDOW_FRAME','WINTER','WOOD_FRAMED']
 
 async function mergeSubjects(arr1, arr2) {
   let merged = [];
-  let subjects = [];
   for (let i = 0; i < arr1.length; i++) {
-    subjects = [
-      arr2[i] // episode
-    ];
+    let subjects = {
+      episode: arr2[i] // episode
+    };
     for (let j = 0; j < arr1[0].length; j++) {
-      subjects.push(arr1[i][j])
+      subjects[subjectsList[j]] = arr1[i][j]
     }
     merged.push(subjects);
   }
   
-  database.query(QUERY.INSERT_SUBJECTS, [merged], (error, results) => {
-    if (error || !results) {
+  const results = await db.subjects.bulkCreate(merged)
+    .catch((error) => {
       log.error(error.message);
-      return;
-    } else {
-      log.info("Subjects inserted: " + results.affectedRows);
-      return;
-    }
-  });
+      throw error.message;
+    }) 
+
+  log.info("Subjects inserted: " + results.length);
+  return;
+
+  
 };
 
+async function initializeDb() {
+  await getEpisodeData();
+  await getDates();
+  await getSubjects();
 
-await getEpisodeData();
-await getDates();
-await getSubjects();
+  await mergeEpisodes(episodedata, dates, episodes);
+  await mergeSubjects(arrayOfSubjects, episodes);
+  await mergeColors(arrayOfColors, episodes);
+}
 
-await mergeEpisodes(episodedata, dates, episodes);
-await mergeSubjects(arrayOfSubjects, episodes);
-await mergeColors(arrayOfColors, episodes);
+export default initializeDb;

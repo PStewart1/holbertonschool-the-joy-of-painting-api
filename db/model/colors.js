@@ -1,7 +1,6 @@
 import {sequelize} from '../mysql.config.js';
 import { DataTypes } from 'sequelize';
-// import log from '../../src/util/logger.js';
-// import Episodes from './episode.js';
+
 
 const Colors = sequelize.define('colors', {
   id: {
@@ -12,10 +11,6 @@ const Colors = sequelize.define('colors', {
   episode: {
     type: DataTypes.STRING,
     allowNull: false,
-    // references: {
-    //   model: Episodes,
-    //   key: 'episode',
-    // }
   },
   Alizarin_Crimson: {
     type: DataTypes.BOOLEAN,
@@ -93,14 +88,5 @@ const Colors = sequelize.define('colors', {
   freezeTableName: true,
   timestamps: false
 });
-
-// Episodes.hasOne(Colors)
-// Colors.sync()
-//   .then(() => {
-//     log.info(`Table ${sequelize.models.colors} synced.`);
-//   })
-//   .catch((error) => {
-//     log.error('Error syncing Colors table:', error);
-//   });
 
 export default Colors;

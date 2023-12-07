@@ -21,7 +21,7 @@ db.episodes = Episodes;
 db.colors = Colors;
 db.subjects = Subjects;
 await db.sequelize.sync({ force: false }).then(() => {
-  log.info('Re-sync db complete');
+  log.info('Db sync complete');
 });
 
 export default db;

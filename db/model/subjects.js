@@ -1,6 +1,5 @@
 import {sequelize} from '../mysql.config.js';
 import { DataTypes } from 'sequelize';
-// import log from '../../src/util/logger.js';
 
 const Subjects = sequelize.define('subjects', {
   id: {
@@ -276,17 +275,13 @@ const Subjects = sequelize.define('subjects', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
   },
+  WOOD_FRAMED: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+  },
 }, {
   freezeTableName: true,
   timestamps: false
 });
-
-// Subjects.sync()
-//   .then(() => {
-//     log.info(`Table ${sequelize.models.subjects} synced.`);
-//   })
-//   .catch((error) => {
-//     log.error('Error syncing Subjects table:', error);
-//   });
 
 export default Subjects;

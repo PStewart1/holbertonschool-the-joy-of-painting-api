@@ -1,6 +1,5 @@
 import { sequelize } from '../mysql.config.js';
 import { DataTypes } from 'sequelize';
-// import log from '../../src/util/logger.js';
 
 const Episodes = sequelize.define('episodes', {
   id: {
@@ -48,13 +47,5 @@ const Episodes = sequelize.define('episodes', {
   freezeTableName: true,
   timestamps: false
 });
-
-// Episodes.sync()
-//   .then(() => {
-//     log.info(`Table ${sequelize.models.episodes} synced.`);
-//   })
-//   .catch((error) => {
-//     log.error('Error syncing Episodes table:', error);
-//   });
 
 export default Episodes;

@@ -6,7 +6,9 @@ import Response from '../domain/response.js';
 import log from './util/logger.js';
 import HttpStatus from './controller/episodeController.js';
 import router from './route/episode.js';
+import initializeDb from './controller/filesController.js';
 
+initializeDb()
 // start server
 dotenv.config();
 const PORT = process.env.SERVER_PORT || 3000;
